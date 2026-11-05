@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 1 Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main>
+
+  <a class="back-link" href="../index.html">&larr; Back to Course Site</a>
+
+  <div class="kicker">Module 1 &middot; Generative Art</div>
+  <h1>Rain or Snow</h1>
+  <div class="meta">
+    Showcase: Oct 1, 2026 &nbsp;&middot;&nbsp; Documentation due: Oct 8, 2026
+  </div>
+
+  <div class="doc-links">
+    <a class="doc-link" href="https://github.com/kyjuanyACF/epsp32-weather" target="_blank">GitHub repo + README &rarr;</a>
+  </div>
+
+  <section>
+    <h2>Summary</h2>
+    <p>This project explores changing weather  by animating transitions between falling rain and snow on an ESP32 display. The raindrops are represented as rectangles that move downward quickly by incrementing their y-position by 4 pixels per frame. In contrast, the snowflakes are represented as circles that drift downward at a slower pace, moving by only 1 pixel per frame, with small side-to-side adjustments along the x-axis to simulate a floating effect. To keep the visual running in an infinite loop, particles reset to random coordinates at the top of the display as soon as they reach the bottom, ensuring that approximately 50 unique particles remain active on screen at all times. Additionally, rather than creating a digital scene of a window frame over the animations, the piece incorporates mixed media by using physical envelopes from our art installation to frame the display and complete the window illusion.</p>
+  </section>
+
+  <section>
+    <h2>Inspiration & Motivations</h2>
+    <p>This art piece was inspired by the changing seasons, specifically, the image of sitting by your window and seeing the leaves change color and fall. My original sketches included a tree transitioning between blooming flowers, vibrant orange and red leaves, down to bare branches in the cold winter. However, this was a bit too ambitious as a first project on the ESP32 and required a lot of math. Thus, I decided to explore changing weather, more specifically rain and snow, as these were a lot easier to visualize and replicate on an ESP32 while maintaining a similar theme of transitioning between states.</p>
+  </section>
+
+  <section>
+    <h2>Technology & Hardware</h2>
+    <p>For this project, I used the LILYGO T-Display (ESP32) board. Setting up my laptop and the ESP32 was a bit tricky at first. Getting all the right drivers and settings lined up took a little troubleshooting, but once everything was set up, it was really easy to just upload things directly to the ESP32 and see cool art and designs.
+
+I used the Arduino IDE to write and upload the code, along with the TFT_eSPI library to draw the shapes and handle the screen graphics. The logic itself was coded in C++, using basic math and random number generators to control the particle movement for the rain and snow animations.
+
+I used a USB-C cable plugged into my laptop while developmenting and uploading code; however, I powered the ESP32 using a small battery for the final art installation at Milstein.</p>
+  </section>
+
+  <section>
+    <h2>Images & Videos</h2>
+    <div class="photos">
+      <figure>
+        <img src="../media/module1-display.gif" alt="A LILYGO T-Display connected over USB-C in a dark room, its screen showing scattered white dots on a light background" loading="lazy">
+        <figcaption>The ESP32 running my sketch.</figcaption>
+      </figure>
+      <figure>
+        <video src="../media/module1-envelope.mp4" autoplay loop muted playsinline></video>        <figcaption>The display mounted in its envelope, hanging at Milstein.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Installation at the Milstein Center</h2>
+    <p>It was cool and inspiring to see everyone else's projects during the showcase and instillation. Some people created super detailed, elaborate artistic scenes, while others went with simpler drawings but built really complex, dynamic elements. Overall, everyone was  incredibly creative , which inspired me to think about all the cool things I could do in the future using an ESP32.</p>
+    <figure class="single">
+      <img src="../media/module1-installation.jpeg" alt="Three people standing at a wall of windows, hanging and photographing small pieces of work" loading="lazy">
+      <figcaption>Hanging and photographing pieces along the windows.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Design Recommendations &amp; Next Steps</h2>
+    <p>Next time, I’d like to push myself to try creating the changing seasons art piece, possibly using other libraries as well as adding an interactive element with the ESP32. While my project isn’t exactly a GIF, there is not a lot of variation in the images it creates, so adding an interactive element will add complexity and make it more intriguing to watch.
+
+Additionally, I could experiment with expanding the design itself by playing around with new variables. This could include adding  new weather scenes, such as sunny, lightning, or windy conditions, and changing parameters like speed, wind angle, and chnaging colors to make the art more interesting.</p>
+  </section>
+
+  <footer>
+    <a href="../index.html">&larr; Back to Course Site</a>
+  </footer>
+
+</main>
+
+</body>
+</html>
