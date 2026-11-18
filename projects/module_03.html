@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 2 Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main>
+
+  <a class="back-link" href="../index.html">&larr; Back to Course Site</a>
+
+  <div class="kicker">Module 3&middot; Distributed Communication</div>
+  <h1>TBD</h1>
+  <div class="meta">
+    Showcase: Nov 12th, 2026 &nbsp;&middot;&nbsp; Documentation due: Nov 17th, 2026 &nbsp;&middot;&nbsp; Collaboarted with: Tiffany Yaxi Tu
+  </div>
+
+  <div class="doc-links">
+    <a class="doc-link" href="https://github.com/kyjuanyacf/esp32-Scoop-s-Up" target="_blank">GitHub repo + README &rarr;</a>
+  </div>
+
+  <section>
+    <h2>Summary</h2>
+    <p>A button smashing game that creates art! One player adds sunlight while the other adds water. As you both press the ESP32 buttons, the plant grows and goes through different stages of the plant cycle:</p>
+    <ul>
+      <li>seed</li>
+      <li>sprout</li>
+      <li>stem</li>
+      <li>leaves</li>
+      <li>flower</li>
+    </ul>
+    <p>However, the plant only grows as much as whichever resource is lower. This means if one person is smashing buttons and the other isn’t,  the plant wont grown, you need both players (water and sunlight). Once you both hit the target (20 presses), the flower fully blooms. Then, just like the real plant cycle, the game restarts and you’re back to a seed again.</p>
+  </section>
+
+  <section>
+    <h2>Inspiration &amp; Motivations</h2>
+    <p>We were inspired by the plant lifecycle and the environments that allow plants to thrive such as sufficient water and sunlight. Since plant cant survive with just water or just sunlight, this scenario made  a perfect fit for a two-player game where you have to work together.</p>
+      <figure>
+        <img class ="full-img" "img src="../media/module3-plant.jpg" alt="Plant Lifecycle" loading="lazy">
+        <figcaption>Example of Plant Lifecycle.</figcaption>
+      </figure>
+  </section>
+
+  <section>
+    <h2>Technology & Hardware</h2>
+    <p>Each board keeps track of two numbers: water presses and sunlight presses. Whenever you press your button, the boards  number increments by 1. The plant’s growth is based on whichever number is lower, so if water is at 15 and sunlight is at 7, the plant only grows to stage 7. That’s why one person can’t win alone. The plant changes stages at 4, 8, 12, and 20, and it fully blooms once both players hit 20.
+
+To share info between the boards, we used ESP-NOW. Every time you press, your board sends a message with your team ID, your player ID, and your press count. Your partner’s board reads that message and updates your number on their screen. The boards also resend their count every 250 ms in case a message gets dropped. Once the flower blooms, pressing again resets both boards back to a seed.</p>
+
+  <section>
+    <h2>How It Came Together</h2>
+    <div class="photos">
+      <figure>
+        <img src="../media/module3-demo.gif" alt="screen capture of game play" loading="lazy">
+        <figcaption>Example of Game Play.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+
+  <section>
+    <h2>Showcase Reflections</h2>
+    <p>It was so fun seeing everyone’s creativity and getting to play each other’s games. I loved seeing how people added strategy so the order of button presses actually mattered, and how people thought about ways to encourage collaboration between players. My favorite project was the potion mixing game, because each player made a meaningful contribution and you and your partner had to talk it out and work together to get the potions right.</p>
+  </section>
+
+  <section>
+    <h2>Design Recommendations &amp; Next Steps</h2>
+    <p>Next time, I want to refine the gameplay logic, so instead of having the potentiometer just control speed, I could use it to scale overall difficulty by adding more ice cream flavors and decreasing customer patience over time. Since the game is a bit difficult right now, I can also  improve the scoop generating system so it isn't purely random, guaranteeing that every order ticket is actually possible to complete. As for the physical set up, now that I know how to use the  ESP32 to simulate a game controller, It’d be cool to design and 3D print a small handheld controller box to house the ESP32, joystick, knob, and button, making the setup more portable and easier to play with.</p>
+  </section>
+
+  <footer>
+    <a href="../index.html">&larr; Back to Course Site</a>
+  </footer>
+
+</main>
+
+</body>
+</html>
