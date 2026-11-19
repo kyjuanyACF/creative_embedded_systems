@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Module 2 Documentation</title>
+<title>Module 3 Documentation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,18 +16,18 @@
   <a class="back-link" href="../index.html">&larr; Back to Course Site</a>
 
   <div class="kicker">Module 3&middot; Distributed Communication</div>
-  <h1>TBD</h1>
+  <h1>Multiplayer Flower Art</h1>
   <div class="meta">
     Showcase: Nov 12th, 2026 &nbsp;&middot;&nbsp; Documentation due: Nov 17th, 2026 &nbsp;&middot;&nbsp; Collaboarted with: Tiffany Yaxi Tu
   </div>
 
   <div class="doc-links">
-    <a class="doc-link" href="https://github.com/kyjuanyacf/esp32-Scoop-s-Up" target="_blank">GitHub repo + README &rarr;</a>
+    <a class="doc-link" href="https://github.com/kyjuanyACF/esp32-now-flower-game/tree/main" target="_blank">GitHub repo + README &rarr;</a>
   </div>
 
   <section>
     <h2>Summary</h2>
-    <p>A button smashing game that creates art! One player adds sunlight while the other adds water. As you both press the ESP32 buttons, the plant grows and goes through different stages of the plant cycle:</p>
+    <p>We created a button smashing game that creates art! One player adds sunlight while the other adds water. As you both press the ESP32 buttons, the plant grows and goes through different stages of the plant cycle:</p>
     <ul>
       <li>seed</li>
       <li>sprout</li>
@@ -49,18 +49,17 @@
 
   <section>
     <h2>Technology & Hardware</h2>
-    <p>Each board keeps track of two numbers: water presses and sunlight presses. Whenever you press your button, the boards  number increments by 1. The plant’s growth is based on whichever number is lower, so if water is at 15 and sunlight is at 7, the plant only grows to stage 7. That’s why one person can’t win alone. The plant changes stages at 4, 8, 12, and 20, and it fully blooms once both players hit 20.
-
-To share info between the boards, we used ESP-NOW. Every time you press, your board sends a message with your team ID, your player ID, and your press count. Your partner’s board reads that message and updates your number on their screen. The boards also resend their count every 250 ms in case a message gets dropped. Once the flower blooms, pressing again resets both boards back to a seed.</p>
+    <p>Each board keeps track of two numbers: water presses and sunlight presses. Whenever you press your button, the boards  number increments by 1. The plant’s growth is based on whichever number is lower, so if water is at 15 and sunlight is at 7, the plant only grows to stage 7. That’s why one person can’t win alone. The plant changes stages at 4, 8, 12, and 20, and it fully blooms once both players hit 20.</p>
+    </p>pTo share info between the boards, we used ESP-NOW. Every time you press, your board sends a message with your team ID, your player ID, and your press count. Your partner’s board reads that message and updates your number on their screen. The boards also resend their count every 250 ms in case a message gets dropped. Once the flower blooms, pressing again resets both boards back to a seed.</p>
 
   <section>
     <h2>How It Came Together</h2>
-    <!-- <div class="photos">
+    <div class="photos">
       <figure>
-        <img src="../media/module3-demo.gif" alt="screen capture of game play" loading="lazy"> 
+        <img src="../media/module3-demo.mp4" alt="screen capture of game play" loading="lazy"> 
         <figcaption>Example of Game Play.</figcaption>
       </figure>
-    </div> -->
+    </div>
   </section>
 
 
@@ -71,7 +70,7 @@ To share info between the boards, we used ESP-NOW. Every time you press, your bo
 
   <section>
     <h2>Design Recommendations &amp; Next Steps</h2>
-    <p>Next time, I want to refine the gameplay logic, so instead of having the potentiometer just control speed, I could use it to scale overall difficulty by adding more ice cream flavors and decreasing customer patience over time. Since the game is a bit difficult right now, I can also  improve the scoop generating system so it isn't purely random, guaranteeing that every order ticket is actually possible to complete. As for the physical set up, now that I know how to use the  ESP32 to simulate a game controller, It’d be cool to design and 3D print a small handheld controller box to house the ESP32, joystick, knob, and button, making the setup more portable and easier to play with.</p>
+    <p>Next time, I want to add more strategy so the game isn’t just about button presses. Such as making it so too much of one resource hurts the plant and doesn’t just stop plant growth. This means if water gets way ahead of sunlight, the plant starts to wilt, so players have to watch each other and balance their presses. We can also add different functions to the left and right so which button you press matters.</p>
   </section>
 
   <footer>
