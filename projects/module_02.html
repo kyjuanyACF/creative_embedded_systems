@@ -29,7 +29,7 @@
 
   <section>
     <h2>Summary</h2>
-    <p>I built an ice cream stacking game where random scoops fall from the top of the screen, and the player has to move an ice cream cone left or right to catch the right flavors and build a customer's order from the bottom up. The scoops are drawn using random flavor values, and I used a potentiometer knob to control how fast the scoops fall. If you accidentally catch the wrong flavor, you can just press a button to toss the top scoop off the cone. The game displays everything next to a panel that tracks customer patience, order tickets, and your score. The game is over once 3 "customers" or order tickets are missed. </p>
+    <p>I built an ice cream stacking game where random scoops fall from the top of the screen, and the player has to move an ice cream cone left or right to catch the right flavors and build a customer's order from the bottom up. The scoops are drawn using random flavor values, and I used a potentiometer knob to control how fast the scoops fall. If you accidentally catch the wrong flavor, you can just press a button to toss the top scoop off the cone. The game displays everything next to a panel that tracks customer patience, order tickets, and your score. The game is over once 3 "customers" or order tickets are missed.</p>
   </section>
 
   <section>
@@ -48,28 +48,354 @@
   </section>
 
   <section>
-    <h2>Technology & Hardware</h2>
-    <p>For this project, I used a LILYGO T-Display (ESP32) board, a joystick, a potentiometer, a button, a breadboard, jumper wires, and a USB-C cable.
+    <h2>Technical Implementation</h2>
 
-I custom-drew and designed the entire ice cream shop background screen, the cone, and all the individual scoop flavors using Procreate to give the  game a pixel-art  style.
+    <h3>Wiring &amp; Physical Components</h3>
+    <ul>
+      <li>LILYGO TTGO T-Display (ESP32)</li>
+      <li>Breadboard</li>
+      <li>Potentiometer</li>
+      <li>Joystick (with built-in push switch)</li>
+      <li>14 jumper wires</li>
+      <li>USB-C cable</li>
+    </ul>
 
-To wire everything together on the breadboard, I connected the joystick's GND to GND, its +5V pin to the ESP32's 3V pin, and its VRx and VRy pins to pins G32 and G33. The potentiometer's outer legs connected to 3V and GND with its middle leg hooked up to pin G37, while the button was wired with one leg running to pin G25 and the other to GND.
+    <figure class="single">
+      <img class="full-img" src="../media/module2-wiring.HEIC" alt="Breadboard wiring of the ESP32, joystick, and potentiometer" loading="lazy">
+      <figcaption>My breadboard wiring.</figcaption>
+    </figure>
 
-The ESP32 acts directly as a controller. The microcontroller code (ice_cream_esp32.ino) reads the joystick, potentiameter, and button about 50 times a second and sends them to the laptop as a single line of text formatted as joyX,joyY,pot,button. The web game (sketch.js) reads these lines in Chrome using the Web Serial API, translating the data in real time to move the cone, set the fall speed, and handle button presses.</p>
+    <p>The joystick and the potentiometer both get power from the ESP32's 3V pin and share its GND. Here's where each component goes:</p>
+    <ul class="pin-map">
+      <li><span>Joystick VRx</span> <b>G39</b> left/right</li>
+      <li><span>Joystick VRy</span> <b>G32</b> up/down</li>
+      <li><span>Joystick SW</span> <b>G33</b> press the stick (the button)</li>
+      <li><span>Pot middle leg</span> <b>G36</b> scoop speed</li>
+      <li><span>Pot outer legs</span> <b>3V + GND</b></li>
+      <li><span>Joystick +5V / GND</span> <b>3V + GND</b></li>
+    </ul>
+    <p>Pins 39, 32, and 36 can read analog inputs, that the joystick axes and potentiometer need. The switch only needs on/off (1/0), so it's connected to G33 as a digital input.</p>
+
+    <h3>From Hardware to Data</h3>
+    <p>Turning the potentiometer or moving the joystick changes its voltage, and the ESP32 converts this voltage into a number from <code>0</code> to <code>4095</code>.</p>    
+    <p>The switch is wired using <code>INPUT_PULLUP</code>. This holds the pin at <code>1</code> until you press the stick down and connect it to GND, making it read <code>0</code>.</p>
+
+<script type="text/plain" class="code" data-file="ice_cream_esp32.ino" data-lang="arduino" data-caption="ESP32 code: draws the instructions once, then reads and sends joystick, button, and potentiometer values over serial">
+#include <TFT_eSPI.h>
+TFT_eSPI tft = TFT_eSPI();
+
+int xyzPins[] = {39, 32, 33};   // x, y, z(switch) pins
+int potPin = 36;
+
+// ----- Ice cream colors -----
+uint16_t CREAM, PINK, BROWN, MINT, CHOCO, CONE, CHERRY;
+
+void drawInstructions() {
+  tft.fillScreen(CREAM);
+
+  // Title
+  tft.setTextColor(PINK, CREAM);
+  tft.drawString("Ice Cream Stacker", 6, 6, 4);
+
+  // Instructions
+  tft.setTextColor(BROWN, CREAM);
+  tft.drawString("Stick: move your cone", 8, 42, 2);
+  tft.drawString("Knob: scoop speed",     8, 62, 2);
+  tft.drawString("Click stick: start",    8, 82, 2);
+  tft.setTextColor(PINK, CREAM);
+  tft.drawString("Match the order ticket!", 8, 108, 2);
+
+  // Little cone with three scoops + a cherry
+  tft.fillTriangle(204, 95, 232, 95, 218, 132, CONE);
+  tft.fillCircle(218, 88, 13, CHOCO);
+  tft.fillCircle(218, 70, 12, MINT);
+  tft.fillCircle(218, 53, 12, PINK);
+  tft.fillCircle(218, 39, 4, CHERRY);
+}
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(xyzPins[2], INPUT_PULLUP);  // pullup resistor for switch
+
+  tft.init();
+  tft.setRotation(1);   // landscape, 240 x 135
+
+  CREAM  = tft.color565(255, 245, 225);
+  PINK   = tft.color565(255, 120, 170);
+  BROWN  = tft.color565(110,  60,  40);
+  MINT   = tft.color565(150, 230, 190);
+  CHOCO  = tft.color565(120,  70,  40);
+  CONE   = tft.color565(225, 170,  90);
+  CHERRY = tft.color565(220,  30,  50);
+
+  drawInstructions();   // draw once so the screen doesn't flicker
+}
+
+void loop() {
+  int xVal = analogRead(xyzPins[0]);
+  int yVal = analogRead(xyzPins[1]);
+  int zVal = digitalRead(xyzPins[2]);
+  int potVal = analogRead(potPin); // potentiometer value = analog data --> analogRead(pin#)
+  Serial.printf("%d,%d,%d,%d", xVal, yVal, zVal, potVal);
+  Serial.println();
+  delay(100);
+}
+</script>
+
+    <p>Every time <code>loop()</code> runs, the code reads all four controls and stores each in its own variable (<code>xVal</code>, <code>yVal</code>, <code>zVal</code>, <code>potVal</code>). It then prints them as one comma-separated line, like <code>2051,1987,1,3200</code>, and waits a moment before reading again.</p>
+    <p>The display screen shows ice cream themed instructions, drawn once in <code>setup()</code>.</p>
+
+    <h3>Using the Data</h3>
+    <p>On your laptop, <code>sketch.js</code> connects to the ESP32 with the Web Serial API (Chrome/Edge) at 9600 baud, matching the ESP32. <code>readLoop()</code> collects the incoming information and splits it into lines, then <code>parseLine()</code> splits each line at the commas and stores the four values into global variables (<code>joyX</code>, <code>joyY</code>, <code>btn</code>, <code>pot</code>). It also flips the switch value so pressed = 1.</p>
+
+<script type="text/plain" class="code" data-file="sketch.js" data-lang="p5.js" data-caption="From sketch.js: connecting over Web Serial and turning each line into controls">
+async function connectSerial() {
+  if (!('serial' in navigator)) {
+    connectButton.html('Use Chrome or Edge for serial');
+    return;
+  }
+  try {
+    const port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 9600 });   // must match Serial.begin() on the ESP32
+    const decoder = new TextDecoderStream();
+    port.readable.pipeTo(decoder.writable);
+    const reader = decoder.readable.getReader();
+    connected = true;
+    connectButton.html('Connected ✓');
+    readLoop(reader);
+  } catch (err) {
+    connectButton.html('Connect failed — try again');
+    console.log(err);
+  }
+}
+
+async function readLoop(reader) {
+  let buffer = '';
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += value;
+    let lines = buffer.split('\n');
+    buffer = lines.pop();            // keep any half-finished line
+    for (let line of lines) parseLine(line.trim());
+  }
+}
+
+function parseLine(line) {
+  let parts = line.split(',');
+  if (parts.length !== 4) return;
+  let vals = parts.map(v => parseInt(v));
+  if (vals.some(v => isNaN(v))) return;   // skip garbled lines (e.g. right after connecting)
+
+  joyX = vals[0];
+  joyY = vals[1];
+  btn = (vals[2] === 0) ? 1 : 0;          // pressed = 1 for the game
+  pot = vals[3];
+
+  // Joysticks rarely rest at exactly 2048, so use the first reading as center
+  if (!gotFirstReading) {
+    joyCenter = joyX;
+    gotFirstReading = true;
+  }
+}
+
+function moveCone() {
+  let tilt = (joyX - joyCenter) / 2048;   // about -1 to 1
+  if (abs(tilt) < 0.15) tilt = 0;         // ignore tiny wiggles
+  coneX += tilt * 10;
+  coneX = constrain(coneX, 40, GAME_W - 40);
+}
+
+function speed() {
+  // Knob = how fast scoops fall
+  return map(pot, 0, 4095, 2, 9);
+}
+
+function draw() {
+  background(SKY);
+
+  if (!connected) keyboardControls();
+
+  // Button: only act at the moment it is pressed down
+  let pressed = (btn === 1 && lastBtn === 0);
+  lastBtn = btn;
+
+  if (!started) {
+    drawStartScreen();
+    if (pressed) {
+      started = true;
+      restart();      // fresh order + first scoop right when you press
+    }
+    return;
+  }
+
+  if (gameOver) {
+    drawGameOver();
+    if (pressed) restart();
+    return;
+  }
+  // ...
+</script>
+
+    <p><code>draw()</code> uses the most recent values at every frame:</p>
+    <ul>
+      <li><b>Joystick X:</b> converted to approximately -1 to 1 that slides the cone left and right.</li>
+      <li><b>Potentiometer:</b> mapped from 0–4095 to a fall speed of 2–9.</li>
+      <li><b>Switch:</b> counts once per press to toss the top scoop, or restart.</li>
+    </ul>
+
+    <h3>Testing: Before vs. Now</h3>
+    <p>To get started, I used Google Gemini to build a simple tower stacking game. I kept the stacking logic and adapted the rest with my own art and ice cream shop theme, and added new mechanics. In the original, one object slides side to side at the top of the screen and you press to "drop" it onto the tower. In mine, the scoops "rain" down from the sky and you race to catch them with the cone.</p>
+    <p>I originally built and tested the game without the breadboard or any physical components. I used keyboard controls that set the same variables the ESP32 would, using the same 0–4095 range, so the game didn't depend on any specific inputs.</p>
+
+<script type="text/plain" class="code" data-file="sketch.js" data-lang="p5.js" data-caption="From sketch.js: the keyboard backup used before the hardware was wired up">
+function keyboardControls() {
+  if (keyIsDown(LEFT_ARROW)) joyX = 0;
+  else if (keyIsDown(RIGHT_ARROW)) joyX = 4095;
+  else joyX = joyCenter;
+
+  if (keyIsDown(187)) pot = min(4095, pot + 30);   // = key: faster
+  if (keyIsDown(189)) pot = max(0, pot - 30);      // - key: slower
+
+  btn = keyIsDown(32) ? 1 : 0;   // 32 = space bar
+}
+
+function keyPressed() {
+  if (key === ' ') return false;   // stop the page from scrolling
+}
+</script>
+
+    <p><strong>Before:</strong> the arrow keys could push the cone left or right, the speed knob was the +/- keys, and space was the button.</p>
+    <p><strong>Now:</strong> once you click "Connect ESP32," the keyboard is no longer used and the ESP32 readings are used instead. The joystick moves the cone, while the potentiometer changes speed. Because both versions used the same variables, switching to reading hardware data did not require me to change any of the core game logic.</p>
+
+    <h3>Game Logic</h3>
+    <p>Each customer order is a list of random flavors, read from the bottom of the cone up. The scoops fall one at a time, and 40% of them are guaranteed to be the flavor you need next so the game can stay playable.</p>
+    <p>Scoops land when they cross the top of the stack while lined up with the top scoop. If it doesn't, it keeps falling past the cone. Every caught scoop is checked against the order. Wrong flavors show "Wrong flavor! Toss it," and clicking the stick pops the top scoop off.</p>
+    <p>Every scoop that falls, caught or missed, uses up some of the customer's patience. If patience runs out, the customer leaves and you get a strike, and 3 strikes closes the shop. Each order you finish makes the next one a scoop longer, and the screen scrolls up as the tower grows.</p>
+
+<script type="text/plain" class="code" data-file="sketch.js" data-lang="p5.js" data-caption="From sketch.js: building orders, landing scoops, and patience">
+function newOrder() {
+  let size = FIRST_ORDER_SIZE + ordersServed;   // 5, then 6, 7, 8...
+  order = [];
+  for (let i = 0; i < size; i++) {
+    order.push(floor(random(NUM_FLAVORS)));
+  }
+  stack = [];
+  maxPatience = size * 3 + 3;   // bigger orders get more patience
+  patience = maxPatience;
+}
+
+function stackIsCorrect() {
+  for (let i = 0; i < stack.length; i++) {
+    if (stack[i].f !== order[i]) return false;
+  }
+  return true;
+}
+
+function newScoop() {
+  // Sometimes give the flavor you need, otherwise a random one
+  let f = floor(random(NUM_FLAVORS));
+  let need = neededFlavor();
+  if (need !== -1 && random() < HELPFUL_CHANCE) f = need;
+
+  return {
+    x: random(R, GAME_W - R),
+    y: -R - cameraY(),        // just above the screen, even after scrolling
+    f: f,
+    missed: false,
+    done: false,
+  };
+}
+
+function updateScoop(s) {
+  s.y += speed();
+
+  // Where a scoop would land on top of the stack
+  let landY = coneTopY - R * 0.6 - stack.length * SCOOP_GAP;
+  let topOff = stack.length > 0 ? stack[stack.length - 1].off : 0;
+  let off = s.x - coneX;
+
+  // Only check when the scoop is crossing the top of the stack
+  if (!s.missed && s.y >= landY) {
+    let lined = abs(off - topOff) < R * 1.1;
+    let room = stack.length < order.length;
+    let closeEnough = s.y - landY < speed() + 2;
+    if (lined && room && closeEnough) {
+      stack.push({ off: off, f: s.f });   // caught it!
+      if (s.f !== order[stack.length - 1]) {
+        showMessage('Wrong flavor! Toss it');
+      }
+      s.done = true;
+      // Finishing an order starts a fresh customer, so don't use up their patience
+      if (!checkOrderDone()) scoopFinished();
+      return;
+    }
+    s.missed = true;                      // keeps falling past the cone
+  }
+
+  if (s.y > coneTopY + 200) {
+    s.done = true;
+    scoopFinished();
+  }
+}
+
+function scoopFinished() {
+  if (gameOver) return;
+  patience--;
+  if (patience <= 0) {
+    strikes++;
+    if (strikes >= MAX_STRIKES) {
+      gameOver = true;
+      return;
+    }
+    showMessage('Customer left! :');
+    newOrder();
+  }
+}
+
+function checkOrderDone() {
+  if (stack.length === order.length && stackIsCorrect()) {
+    ordersServed++;
+    showMessage('Order Up :]');
+    newOrder();
+    return true;
+  }
+  return false;
+}
+
+function tossTopScoop() {
+  if (stack.length === 0) return;
+  stack.pop();
+  showMessage('Tossed!');
+}
+</script>
+
+    <h3>Obstacles &amp; How I Fixed Them</h3>
+    <p><strong>Using the ESP32 data</strong> was my biggest issue. My first ESP32 code used pins that didn't match my wiring: the potentiometer was set to G37, which wasn't usable, and the joystick switch was being read as an analog input instead of a digital one. I fixed it by matching every pin in the code to the real wiring (39, 32, 33, 36).</p>
+    <p>I also ran into wiring problems. I mixed up the power and ground rails on the breadboard, so the ESP32 wasn't reading real data: the X and Y values were stuck at 4095, and pressing the switch didn't change anything. When I rewired everything from scratch, I caught the mistake and connected each component correctly, following the wiring diagram from Lab 2.</p>
+    <p><strong>Data in the wrong order.</strong> Once the board was reading and sending data correctly, the game was reading it wrong. The ESP32 sent <code>x,y,z,pot</code>, so I rewrote <code>parseLine()</code> to read the values in the right order.</p>
+  </section>
 
   <section>
     <h2>How It Came Together</h2>
     <div class="photos">
       <figure>
         <img src="../media/module2-demo.gif" alt="screen capture of game play" loading="lazy">
-        <figcaption>A minute of gameplay.</figcaption>
+        <figcaption>Gif of a minute of gameplay using keyboard controls.</figcaption>
       </figure>
     </div>
+
+    <figure class="controller-video">
+      <video controls muted loop playsinline preload="metadata">
+        <source src="../media/module2-updated-demo.mp4" type="video/mp4">
+      </video>
+      <figcaption>Gameplay with ESP32 controller in 2x speed.</figcaption>
+    </figure>
   </section>
 
   <section>
-    <h2>Design Recommendations &amp; Next Steps</h2>
-    <p>Next time, I want to refine the gameplay logic, so instead of having the potentiometer just control speed, I could use it to scale overall difficulty by adding more ice cream flavors and decreasing customer patience over time. Since the game is a bit difficult right now, I can also  improve the scoop generating system so it isn't purely random, guaranteeing that every order ticket is actually possible to complete. As for the physical set up, now that I know how to use the  ESP32 to simulate a game controller, It’d be cool to design and 3D print a small handheld controller box to house the ESP32, joystick, knob, and button, making the setup more portable and easier to play with.</p>
+    <h2>Next Steps</h2>
+    <p>Next time, I want to refine the gameplay logic, so instead of having the potentiometer just control speed, I could use it to scale overall difficulty by adding more ice cream flavors and decreasing customer patience over time. Since the game is a bit difficult right now, I can also  improve the scoop generating system so it isn't purely random, guaranteeing that every order ticket is actually possible to complete. As for the physical set up, now that I know how to use the  ESP32 to simulate a game controller, It'd be cool to design and 3D print a small handheld controller box to house the ESP32, joystick, knob, and button, making the setup more portable and easier to play with.</p>
   </section>
 
   <footer>
@@ -77,6 +403,83 @@ The ESP32 acts directly as a controller. The microcontroller code (ice_cream_esp
   </footer>
 
 </main>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+// Turns the raw code blocks above into editor-style code boxes.
+// Needs highlight.js loaded first (see the <script> tags in your HTML).
+
+(function () {
+  const LANG_ALIASES = { arduino: 'cpp', ino: 'cpp', p5: 'javascript', 'p5.js': 'javascript', js: 'javascript', html: 'xml' };
+
+  function escapeHTML(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // Remove blank lines at the start/end and the shared indent, so pasted code lines up
+  function tidy(code) {
+    let lines = code.replace(/\t/g, '  ').split('\n');
+    while (lines.length && !lines[0].trim()) lines.shift();
+    while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+    const indents = lines.filter(l => l.trim()).map(l => l.match(/^ */)[0].length);
+    const cut = indents.length ? Math.min(...indents) : 0;
+    return lines.map(l => l.slice(cut)).join('\n');
+  }
+
+  function build(src) {
+    const code = tidy(src.textContent);
+    const label = src.dataset.lang || '';
+    const lang = LANG_ALIASES[label.toLowerCase()] || label.toLowerCase();
+
+    const fig = document.createElement('figure');
+    fig.className = 'snippet';
+
+    const lineCount = code.split('\n').length;
+    const numbers = Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
+
+    let highlighted = escapeHTML(code);
+    if (window.hljs) {
+      try {
+        highlighted = (lang && hljs.getLanguage(lang))
+          ? hljs.highlight(code, { language: lang }).value
+          : hljs.highlightAuto(code).value;
+      } catch (e) { /* fall back to plain text */ }
+    }
+
+    fig.innerHTML =
+      '<div class="snippet-head">' +
+        '<span class="snippet-dots"><i></i><i></i><i></i></span>' +
+        '<span class="snippet-file">' + escapeHTML(src.dataset.file || 'code') + '</span>' +
+        '<span class="snippet-lang">' + escapeHTML(label) + '</span>' +
+        '<button class="snippet-copy" type="button">copy</button>' +
+      '</div>' +
+      '<div class="snippet-body">' +
+        '<pre class="snippet-gutter" aria-hidden="true">' + numbers + '</pre>' +
+        '<pre><code>' + highlighted + '</code></pre>' +
+      '</div>' +
+      (src.dataset.caption ? '<figcaption>' + escapeHTML(src.dataset.caption) + '</figcaption>' : '');
+
+    const btn = fig.querySelector('.snippet-copy');
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = 'copied!';
+        setTimeout(() => (btn.textContent = 'copy'), 1200);
+      });
+    });
+
+    src.replaceWith(fig);
+  }
+
+  function run() {
+    document.querySelectorAll('script[type="text/plain"].code').forEach(build);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();
+
+</script>
 
 </body>
 </html>
